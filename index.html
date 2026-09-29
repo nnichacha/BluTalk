@@ -1143,6 +1143,23 @@ body{background:var(--bg)}
 .cat-hero .path span{border-radius:999px;padding:3px 9px 3px 4px}.cat-hero .path .sep{background:none!important;border:0!important;padding:0;color:var(--ink-3)}
 .bk-in{width:100%;border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink);padding:10px 12px;font:inherit;font-size:13px;resize:vertical}
 .brand-logo{width:32px;height:32px;border-radius:10px;display:block;box-shadow:0 1px 0 var(--line)}
+/* v14 · simple search */
+.how{display:flex;flex-direction:column;gap:4px;padding:14px 16px;border-radius:18px;background:var(--pb);border:1px solid var(--line);font-size:13.5px;color:var(--ink-2);line-height:1.55}
+.how b{color:var(--ink);font-size:14.5px}
+.res-head{font-size:14px;font-weight:700;color:var(--ink-2);margin:0}
+.res-list{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:22px;overflow:hidden}
+.res{display:flex;align-items:center;gap:6px;padding:4px 10px 4px 0;border-top:1px solid var(--line)}
+.res:first-child{border-top:0}
+.res-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;padding:12px 4px 12px 16px;text-align:left}
+.res-en{font-size:16px;font-weight:700;line-height:1.35;color:var(--ink)}
+.res-th{font-size:13.5px;color:var(--ink-2)}
+.res.top{background:var(--pb)}
+.res.top .res-main{padding-top:14px;padding-bottom:16px}
+.res.top .res-en{font-family:var(--serif);font-weight:400;font-size:24px;line-height:1.2}
+.res.top .icon-btn{background:var(--surface);border:1px solid var(--line);width:44px;height:44px}
+.res-tag{align-self:flex-start;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:999px;background:var(--cta-bg);color:var(--cta-ink);margin-bottom:4px}
+.res-more{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;padding:12px 16px;border-radius:16px;border:1px dashed var(--line);font-size:13.5px;color:var(--ink-2);text-align:left}
+.res-more b{color:var(--ink)}
 </style>
 </head><body>
 <div class="bg-deco" aria-hidden="true"><span class="dots"></span><i class="b1"></i><i class="b2"></i><i class="b3"></i></div>
@@ -1294,6 +1311,7 @@ function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
 const z=n=>String(n).padStart(2,'0');
 const dstr=(d=new Date())=>d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate());
 const addDays=(ds,n)=>{const [y,m,d]=ds.split('-').map(Number);return dstr(new Date(y,m-1,d+n))};
+const autoSay=(t,o)=>{if(S.autoVoice)say(t,o)};
 function markDay(){const t=dstr();if(!S.days.includes(t))S.days.push(t)}
 function markSeen(en){S.seen=[en,...S.seen.filter(x=>x!==en)].slice(0,300);save()}
 
@@ -1445,11 +1463,11 @@ function search(q){
   const toks=qTokens(q),core=toks.filter(t=>!STOP.has(t)),use=core.length?core:toks;const ql=q.toLowerCase();
   const res=[];
   SEARCHABLE.forEach(e=>{
-    const en=(e.en+' '+(e.alt||'')).toLowerCase();const hay=en+' '+e.th+' '+(e.when||'')+' '+e.where.toLowerCase()+' '+(e.whereTh||'');
+    const en=e.en.toLowerCase();const hay=en+' '+(e.alt||'').toLowerCase()+' '+e.th+' '+(e.when||'')+' '+e.where.toLowerCase()+' '+(e.whereTh||'');
     let score=0,all=true;
     use.forEach(t=>{const dict=D.dict[t];if(hay.includes(t)){score+=en.includes(t)?3:2}else if(dict&&dict.split(' ').some(w=>en.includes(w))){score+=2}else all=false});
     if(!all&&hay.includes(ql)){all=true;score+=3}
-    if(all&&score){if(e.en.toLowerCase().startsWith(ql))score+=2;score+={phrase:1.5,travel:1.2,native:1.2,var:1,pattern:.5,email:.9}[e.src];res.push([score,e])}
+    if(all&&score){if(e.en.toLowerCase().startsWith(ql))score+=2;if(e.th.includes(q))score+=4;if(e.th.startsWith(q))score+=2;score-=Math.min(2,e.en.length/60);score+={phrase:1.5,travel:1.2,native:1.2,var:1,pattern:.5,email:.9}[e.src];res.push([score,e])}
   });
   return res.sort((a,b)=>b[0]-a[0]).slice(0,40).map(x=>x[1]);
 }
@@ -1678,21 +1696,25 @@ function sitHTML(id){
 const scRow=s=>{const best=S.scen[s.id];return `<div class="row"><button class="row-main" data-scen="${s.id}">${hueIcon(IC.scen[s.id],HUE[s.group])}<span class="row-text"><span class="row-en">${esc(s.title)}</span><span class="row-th">${esc(s.whereTh)}</span></span>${best!=null?`<span class="tag ${best===s.turns.length?'good':''}">${best}/${s.turns.length}</span>`:I.chev}</button></div>`};
 function searchHTML(q){
   searchQ=q||'';
-  return `<div class="view" style="gap:20px"><div class="search-bar"><button class="icon-btn" data-back aria-label="Back">${I.back}</button>
-    <label class="search-wrap">${I.search}<input id="q" class="search-input" type="search" enterkeyhint="search" autocomplete="off" placeholder="อยากพูดว่าอะไร? ไทยหรืออังกฤษก็ได้" value="${esc(searchQ)}" aria-label="What do you want to say?"></label></div>
+  return `<div class="view" style="gap:18px"><div class="search-bar"><button class="icon-btn" data-back aria-label="Back">${I.back}</button>
+    <label class="search-wrap">${I.search}<input id="q" class="search-input" type="search" enterkeyhint="search" autocomplete="off" placeholder="พิมพ์สิ่งที่อยากพูดเป็นภาษาไทย" value="${esc(searchQ)}" aria-label="What do you want to say?"></label></div>
     <div id="results"></div>
-    <div id="sugs" class="stack">${ASK_GROUPS.map(([t,qs])=>`<div class="stack-sm"><p class="eyebrow">${t}</p><div class="sugs">${qs.map(x=>`<button class="chip-f" data-sug="${esc(x)}">${esc(x)}</button>`).join('')}</div></div>`).join('')}
-      <p class="meta">พิมพ์สิ่งที่อยากพูดเป็นภาษาไทย แล้วเราจะหาประโยคที่ใช้ได้จริงให้ ไม่ต้องรู้ว่าอยู่หมวดไหน</p></div></div>`;
+    <div id="sugs" class="stack">
+      <div class="how"><b>ค้นหาใช้ยังไง</b><span>พิมพ์สิ่งที่อยากพูดเป็นภาษาไทย → ได้ประโยคภาษาอังกฤษที่พูดได้เลย กดลำโพงเพื่อฟัง แตะประโยคเพื่อดูรายละเอียด</span></div>
+      ${ASK_GROUPS.map(([t,qs])=>`<div class="stack-sm"><p class="eyebrow">ลองพิมพ์ · ${t}</p><div class="sugs">${qs.map(x=>`<button class="chip-f" data-sug="${esc(x)}">${esc(x)}</button>`).join('')}</div></div>`).join('')}</div></div>`;
 }
+const resRow=(e,top)=>`<div class="res${top?' top':''}"><button class="res-main" data-sheet="${e.id}">${top?'<span class="res-tag">ตรงที่สุด</span>':''}<span class="res-en">${esc(e.en)}</span><span class="res-th">${esc(e.th)}</span></button>${sayBtn(e.en,top?'':'sm')}</div>`;
 function bindSearch(){
   const inp=$('#q'),out=$('#results'),sg=$('#sugs');let t=null;
   const run=()=>{searchQ=inp.value;const top=route.stack[route.stack.length-1];if(top&&top.type==='search')top.id=searchQ;const q=searchQ.trim();sg.hidden=!!q;if(!q){out.innerHTML='';return}
-    const r=search(q),its=findIntents(q,r);const best=r[0];
-    out.innerHTML=`${its.length?`<div class="stack-sm"><p class="eyebrow">Jump to</p><div class="jumps">${its.map(intentChip).join('')}</div></div>`:''}
-    ${best?`<div class="stack-sm"><p class="eyebrow">Best match</p><div class="best"><button class="best-main" data-sheet="${best.id}"><span class="best-en">${esc(best.en)}</span><span class="best-th">${esc(best.th)}</span><span class="row-meta"><span>${inl(best.icon)}${esc(best.where)}</span></span></button><div class="best-act">${sayBtn(best.en,'')}${heartBtn(best.en,'')}<button class="pill-btn" data-sheet="${best.id}">Practice</button></div></div></div>
-      ${r.length>1?`<div class="stack-sm"><p class="eyebrow">Other ways to say it</p>${reveal(r.slice(1),6,e=>rowHTML(e))}</div>`:''}`
-    :its.length?'':`<div class="empty"><b>No matches for “${esc(q)}”</b>ลองคำที่สั้นลง เช่น “กาแฟ” แทน “ซื้อกาแฟแก้วใหญ่”</div>`}`};
-  inp.addEventListener('input',()=>{clearTimeout(t);t=setTimeout(run,120)});
+    const r=search(q);const per={};
+    const list=r.filter(e=>{const k=e.pid||e.epid||e.sid||e.src;per[k]=(per[k]||0)+1;return per[k]<=2}).slice(0,8);
+    const it=list.length?findIntents(q,r)[0]:null;
+    out.innerHTML=list.length?`<div class="stack-sm"><p class="res-head">“${esc(q)}” พูดเป็นภาษาอังกฤษว่า</p>
+      <div class="res-list">${list.map((e,i)=>resRow(e,i===0)).join('')}</div>
+      ${it?`<button class="res-more" ${it.act}><span>อยากได้ประโยคเพิ่ม? ไปที่หมวด <b>${esc(it.name)}</b></span>${I.chev}</button>`:''}</div>`
+    :`<div class="empty"><b>ยังไม่มีประโยคสำหรับ “${esc(q)}”</b>ลองพิมพ์ให้สั้นลง เช่น “กาแฟ” แทน “ซื้อกาแฟแก้วใหญ่” หรือถาม AI Chat ก็ได้</div>`};
+  inp.addEventListener('input',()=>{clearTimeout(t);t=setTimeout(run,150)});
   $$('[data-sug]').forEach(b=>b.addEventListener('click',()=>{inp.value=b.dataset.sug;run()}));
   run();if(!searchQ)setTimeout(()=>{try{inp.focus({preventScroll:true})}catch(e){}},60);
 }
@@ -1735,6 +1757,7 @@ function profileHTML(){
   <section class="stack"><h2 class="t-sec">Needs review</h2>${needs.length?`<div class="list">${needs.map(id=>{const p=byId[id];return `<div class="row"><button class="row-main" data-open="${id}"><span class="state due">↻</span><span class="row-text"><span class="row-en">${frameHTML(p)}</span><span class="row-th">${S.pat[id].lastOk===false?'Last try was hard. Practice again.':'Due today'}</span></span><span class="lvl">L${p.level}</span></button></div>`}).join('')}</div>`:`<div class="empty"><b>Nothing due right now</b>Patterns come back on day 1, 3, 7, 14 and 30.</div>`}</section>
   <section class="stack"><h2 class="t-sec">Coming back soon</h2><div class="card stats">${upcoming.map(u=>`<span><b>${u.c}</b><span>within ${u.n} day${u.n>1?'s':''}</span></span>`).join('')}</div></section>
   <section class="stack"><h2 class="t-sec">Levels</h2><div class="list">${Object.keys(LEVELS).map(k=>`<div class="level-row"><span class="ic-tile" style="font-size:13px;font-weight:800">L${k}</span><span class="row-text"><span class="row-en">${esc(LEVELS[k].name)}</span><span class="row-th">${esc(LEVELS[k].th)} · ${P.filter(p=>String(p.level)===k).length} patterns</span></span></div>`).join('')}</div></section>
+  <section class="stack"><h2 class="t-sec">Sound</h2><div class="card pad"><button class="switch-row" id="auto-voice" aria-pressed="${!!S.autoVoice}"><span class="row-text"><span class="feature-t" style="font-size:14px">อ่านออกเสียงอัตโนมัติ</span><span class="row-th" style="font-size:12.5px">ปิดไว้ = เริ่มจากอ่าน/พิมพ์ กดปุ่มลำโพงเมื่ออยากฟัง</span></span><span class="switch" aria-hidden="true"></span></button></div></section>
   <section class="stack"><h2 class="t-sec">AI connection</h2><div class="card pad stack-sm">
     <p class="meta">${sampleFn?'You’re inside Claude, so AI chat already works here.':hasFB()?'Connected through Firebase (config.js). Tap Test AI to check.':'For your own app: paste the link of your AI Worker, or set up Firebase in config.js.'}</p>
     <label class="e-field"><span>AI link (Worker URL)</span><input id="ai-url" value="${esc(S.aiUrl||'')}" placeholder="${esc(CFG.aiEndpoint||'https://blutalk-ai.yourname.workers.dev')}" autocomplete="off" inputmode="url"></label>
@@ -1828,7 +1851,7 @@ function buildPick(i){
   $('#b-goal',ovEl).innerHTML=goalHTML();$('.o-foot',ovEl).innerHTML=lFoot();bindFoot();
   const fb=$('.mic-wrap .feedback',ovEl);if(fb)fb.hidden=true;
   if(isNew&&L.made.size===3)celebrate($('#b-goal .gdots',ovEl),12);
-  say(full,{btn:$('#b-say',ovEl)});
+  autoSay(full,{btn:$('#b-say',ovEl)});
 }
 function lPractice(){
   const q=L.pq[L.pqi];const p=L.p;if(!q)return stepIntro('Practice','Pattern นี้ไม่มีแบบฝึกเติมคำ ไปขั้นต่อไปได้เลย');
@@ -1886,18 +1909,18 @@ function bindLesson(){
   if(s===0){
     $('#play-all',ovEl).addEventListener('click',()=>{const list=p.examples.slice(0,5).map(x=>x[0]);let i=0;const btns=$$('.row .say',ovEl);const step=()=>{if(i>=list.length||!L||L.step!==0)return;say(list[i],{btn:btns[i],onend:()=>{i++;setTimeout(step,350)}})};step()});
     $('#show-all',ovEl)?.addEventListener('click',()=>{L.showAll=!L.showAll;const y=$('.o-body',ovEl).scrollTop;renderLesson();$('.o-body',ovEl).scrollTop=y});
-    const pc=$('#pcard',ovEl);const cyc=()=>{L.li=(L.li+1)%p.words.length;const w=p.words[L.li];const f=$('#pc-frame',ovEl);f.innerHTML=frameHTML(p,w[0]);f.querySelector('.slot')?.classList.add('roll');$('#pc-hint',ovEl).innerHTML=`${svgI('hand',2)} ${esc(thaiOf(p,w[1]))} · tap again`;say(sentence(p,w[0]))};
+    const pc=$('#pcard',ovEl);const cyc=()=>{L.li=(L.li+1)%p.words.length;const w=p.words[L.li];const f=$('#pc-frame',ovEl);f.innerHTML=frameHTML(p,w[0]);f.querySelector('.slot')?.classList.add('roll');$('#pc-hint',ovEl).innerHTML=`${svgI('hand',2)} ${esc(thaiOf(p,w[1]))} · tap again`;autoSay(sentence(p,w[0]))};
     pc.addEventListener('click',cyc);pc.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();cyc()}});
   }
   if(s===1){$$('[data-w]',ovEl).forEach(b=>b.addEventListener('click',()=>buildPick(+b.dataset.w)));mountMic($('.mic-wrap',ovEl),()=>sentence(p,L.swap[0]),r=>L.attempts.push(r.ok))}
   if(s===2){$$('[data-pq]',ovEl).forEach(b=>b.addEventListener('click',()=>{const q=L.pq[L.pqi];const o=q.opts[+b.dataset.pq];
-    if(o===q.ex[5]){q.done=true;if(!q.tried.length)L.first++;L.made.add(q.ex[0]);renderLesson();say(q.ex[0]);celebrate($('.opt.right',ovEl),14)}
+    if(o===q.ex[5]){q.done=true;if(!q.tried.length)L.first++;L.made.add(q.ex[0]);renderLesson();autoSay(q.ex[0]);celebrate($('.opt.right',ovEl),14)}
     else{q.tried.push(o);L.shake=o;if(q.tried.length===1){L.wrongs.push({en:q.ex[0],th:q.ex[1]});S.wrong[q.ex[0]]=(S.wrong[q.ex[0]]||0)+1;save()}renderLesson()}}))}
   if(s===3){mountMic($('.mic-wrap',ovEl),()=>L.targets[L.tIdx].en,r=>{L.attempts.push(r.ok);L.made.add(L.targets[L.tIdx].en);$('.o-foot',ovEl).innerHTML=lFoot();bindFoot()});$('#next-t',ovEl)?.addEventListener('click',()=>{L.tIdx++;renderLesson()})}
-  if(s===4){$$('[data-c]',ovEl).forEach(b=>b.addEventListener('click',()=>{const c=L.convos[L.cIdx];L.cPick=c.chips[+b.dataset.c];const mine=sentence(p,L.cPick[0]);L.made.add(mine);renderLesson();say(mine)}));mountMic($('.mic-wrap',ovEl),()=>sentence(p,L.cPick[0]),r=>L.attempts.push(r.ok))}
+  if(s===4){$$('[data-c]',ovEl).forEach(b=>b.addEventListener('click',()=>{const c=L.convos[L.cIdx];L.cPick=c.chips[+b.dataset.c];const mine=sentence(p,L.cPick[0]);L.made.add(mine);renderLesson();autoSay(mine)}));mountMic($('.mic-wrap',ovEl),()=>sentence(p,L.cPick[0]),r=>L.attempts.push(r.ok))}
   if(s===5){setTimeout(()=>celebrate($('#sum-badge',ovEl),L.levelUp||L.allDone?30:20),260)}
 }
-function autoFriend(){const c=L&&L.convos[L.cIdx];if(c)setTimeout(()=>{if(L&&L.step===4)say(c.friend,{btn:$('.msg:not(.me) .say',ovEl)})},250)}
+function autoFriend(){const c=L&&L.convos[L.cIdx];if(c)setTimeout(()=>{if(L&&L.step===4)autoSay(c.friend,{btn:$('.msg:not(.me) .say',ovEl)})},250)}
 function finishLesson(){
   const a=L.attempts;const good=a.filter(Boolean).length;
   L.ok=(L.pq.length>0&&L.first===L.pq.length)||(a.length>0&&good/a.length>=.5);
@@ -2096,7 +2119,7 @@ function bindEmail(){
     if(s===4){finishEmail();return}
     E.step++;renderEmail()});
   if(s===1){
-    const upd=()=>{const full=esent(p,E.tone,E.w[0]);const isNew=!E.made.has(full);E.made.add(full);E.tonesUsed.add(E.tone);renderEmail();if(isNew&&E.made.size===3)celebrate($('.goal .gdots',ovEl),12);say(full)};
+    const upd=()=>{const full=esent(p,E.tone,E.w[0]);const isNew=!E.made.has(full);E.made.add(full);E.tonesUsed.add(E.tone);renderEmail();if(isNew&&E.made.size===3)celebrate($('.goal .gdots',ovEl),12);autoSay(full)};
     $$('[data-ew]',ovEl).forEach(b=>b.addEventListener('click',()=>{E.w=p.words[+b.dataset.ew];upd()}));
     $$('[data-tone]',ovEl).forEach(b=>b.addEventListener('click',()=>{E.tone=b.dataset.tone;S.eTone=E.tone;save();upd()}));
     $('#e-copy1',ovEl).addEventListener('click',e=>copyText(esent(p,E.tone,E.w[0]),e.currentTarget));
@@ -2105,7 +2128,7 @@ function bindEmail(){
   if(s===2||s===4){bindParts(E,refresh)}
   if(s===4){bindFields(E,refresh);$('#e-copy',ovEl).addEventListener('click',e=>copyText(mailPlain(eMail()),e.currentTarget));$('#e-copys',ovEl).addEventListener('click',e=>copyText(eMail().subject,e.currentTarget))}
   if(s===3){$$('[data-eq]',ovEl).forEach(b=>b.addEventListener('click',()=>{const q=E.qs[E.qi];const k=+b.dataset.eq;const o=q.opts[k];
-    if(o.ok){q.done=true;if(!q.tried.length)E.first++;renderEmail();if(q.type==='fill')say(esent(p,'Polite',q.w[0]));celebrate($('.opt.right',ovEl),14)}
+    if(o.ok){q.done=true;if(!q.tried.length)E.first++;renderEmail();if(q.type==='fill')autoSay(esent(p,'Polite',q.w[0]));celebrate($('.opt.right',ovEl),14)}
     else{q.tried.push(k);renderEmail()}}))}
   if(s===5)setTimeout(()=>celebrate($('#sum-badge',ovEl),22),260);
 }
@@ -2182,7 +2205,7 @@ function renderScene(){
   $('#sc-next',ovEl)?.addEventListener('click',()=>{stopAudio();if(SC.t>=0){const tn=SC.s.turns[SC.t];SC.history.push({who:tn.who,npc:tn.npc,you:tn.opts.find(o=>o[1])[0]})}SC.t++;SC.picked=null;SC.order=null;if(SC.t>=SC.s.turns.length)finishScene();renderScene();autoNpc()});
   $('#sc-again',ovEl)?.addEventListener('click',()=>openScene(SC.s.id));if(t>=total&&SC.score===total)setTimeout(()=>celebrate($('#sc-badge',ovEl),26),250);
   $$('[data-opt]',ovEl).forEach(b=>b.addEventListener('click',()=>{const i=+b.dataset.opt;const tn=SC.s.turns[SC.t];SC.picked=i;const ok=tn.opts[i][1];const c=tn.opts.find(o=>o[1]);
-    if(ok)SC.score++;else{S.wrong[c[0]]=(S.wrong[c[0]]||0)+1}markSeen(c[0]);renderScene();say(c[0]);if(ok)celebrate($('.opt.right',ovEl),14);const ex=$('.explain',ovEl);ex&&ex.scrollIntoView({behavior:'smooth',block:'nearest'})}));
+    if(ok)SC.score++;else{S.wrong[c[0]]=(S.wrong[c[0]]||0)+1}markSeen(c[0]);renderScene();autoSay(c[0]);if(ok)celebrate($('.opt.right',ovEl),14);const ex=$('.explain',ovEl);ex&&ex.scrollIntoView({behavior:'smooth',block:'nearest'})}));
   const mw=$('.mic-wrap',ovEl);if(mw)mountMic(mw,()=>SC.s.turns[SC.t].opts.find(o=>o[1])[0],null);
 }
 function sceneExplain(tn,pk,correct){
@@ -2192,7 +2215,7 @@ function sceneExplain(tn,pk,correct){
   <dl class="kv"><dt>Meaning</dt><dd>${esc(correct[2])}</dd><dt>Naturalness</dt><dd>${esc(correct[3])}</dd></dl>
   <div class="audio-row" style="justify-content:flex-start">${sayBtn(correct[0],'')}${heartBtn(correct[0],'')}</div></div>${micHTML('sm')}`;
 }
-function autoNpc(){if(SC&&SC.t>=0&&SC.t<SC.s.turns.length){const tn=SC.s.turns[SC.t];setTimeout(()=>{if(SC)say(tn.npc,{btn:$('.msg:last-child .say',ovEl)})},300)}}
+function autoNpc(){if(SC&&SC.t>=0&&SC.t<SC.s.turns.length){const tn=SC.s.turns[SC.t];setTimeout(()=>{if(SC)autoSay(tn.npc,{btn:$('.msg:last-child .say',ovEl)})},300)}}
 function finishScene(){const id=SC.s.id;S.scen[id]=Math.max(S.scen[id]||0,SC.score);markDay();save()}
 
 /* ================= overlay: smart review ================= */
@@ -2271,8 +2294,8 @@ function renderReview(){
   ovEl.innerHTML=`<div class="o-head"><button class="icon-btn" data-close aria-label="Close">${I.close}</button><div class="bar"><i style="width:${i/total*100}%"></i></div><span class="meta num">${i+1}/${total}</span></div>
     <div class="o-body"><div class="o-inner"><span class="eyebrow" style="text-align:center">${labels[q.type]}</span>${prompt}${opts}${fb}</div></div>
     <div class="o-foot"><button class="btn btn-accent btn-block" id="rv-next" ${canNext?'':'disabled'}>${i<total-1?'Continue':'See result'}</button>${q.type==='speak'&&!canNext?'<div class="foot-hint">Speak, or tap “Show answer” to continue</div>':''}</div>`;
-  $$('[data-a]',ovEl).forEach(b=>b.addEventListener('click',()=>{R.ans=+b.dataset.a;const ok=q.opts[R.ans].ok;scoreQ(q,ok);renderReview();say(q.e.en);if(ok)celebrate($('.opt.right',ovEl),14);const ex=$('.explain',ovEl);ex&&ex.scrollIntoView({behavior:'smooth',block:'nearest'})}));
-  $('#reveal',ovEl)?.addEventListener('click',()=>{R.revealed=true;renderReview();say(q.e.en)});
+  $$('[data-a]',ovEl).forEach(b=>b.addEventListener('click',()=>{R.ans=+b.dataset.a;const ok=q.opts[R.ans].ok;scoreQ(q,ok);renderReview();autoSay(q.e.en);if(ok)celebrate($('.opt.right',ovEl),14);const ex=$('.explain',ovEl);ex&&ex.scrollIntoView({behavior:'smooth',block:'nearest'})}));
+  $('#reveal',ovEl)?.addEventListener('click',()=>{R.revealed=true;renderReview();autoSay(q.e.en)});
   if(q.type==='speak')mountMic($('.mic-wrap',ovEl),()=>q.e.en,r=>{if(!R.spoke){R.spoke=true;scoreQ(q,r.ok)}else if(r.ok&&!R.spokeOk){R.ok++;R.missed=R.missed.filter(e=>e!==q.e)}R.spokeOk=R.spokeOk||r.ok;const b=$('#rv-next',ovEl);b.disabled=false;$('.foot-hint',ovEl)?.remove()});
   $('#rv-next',ovEl).addEventListener('click',()=>{stopAudio();if(q.type==='speak'&&!R.spoke)scoreQ(q,false);R.i++;R.ans=null;R.revealed=false;R.spoke=false;R.spokeOk=false;renderReview();$('.o-body',ovEl).scrollTop=0});
 }
@@ -2558,6 +2581,7 @@ document.addEventListener('click',e=>{
   if((b=t.closest('[data-learntab]'))){go('learn');return}
   if((b=t.closest('[data-lv]'))){S.libLevel=b.dataset.lv;save();rerender();return}
   if((b=t.closest('.nav [data-go]'))||(b=t.closest('[data-go]'))){go(b.dataset.go);return}
+  if((b=t.closest('#auto-voice'))){S.autoVoice=!S.autoVoice;save();b.setAttribute('aria-pressed',S.autoVoice);if(!S.autoVoice)stopAudio();toast(S.autoVoice?'เปิดอ่านออกเสียงอัตโนมัติ':'ปิดเสียงอัตโนมัติแล้ว');return}
   if((b=t.closest('#ai-save'))){S.aiUrl=$('#ai-url').value.trim();S.aiKeyApp=$('#ai-key').value.trim();aiDead=false;save();toast('Saved');return}
   if((b=t.closest('#ai-test'))){const st=$('#ai-status');S.aiUrl=$('#ai-url').value.trim();S.aiKeyApp=$('#ai-key').value.trim();save();aiDead=false;
     if(sampleFn){st.textContent='✓ Claude AI is on';return}if(!hasOwnAI()){st.textContent='Add a link first';return}st.textContent='Testing…';
