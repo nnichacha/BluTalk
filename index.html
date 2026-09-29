@@ -1286,9 +1286,9 @@ EM.patterns.forEach(p=>{const c=ECAT[p.cat];p.exIds=p.words.map(w=>addEntry({en:
 
 /* ================= storage ================= */
 const KEY='patternspeak.v1';
-function blank(){return {v:1,pat:{},plan:null,days:[],speaks:0,recent:[],libLevel:'all',saved:{},seen:[],wrong:{},reviews:0,scen:{},learnTab:'patterns',email:{},escn:{},ai:{mode:'casual',style:'casual',level:'beginner',usePat:true,voice:true},chats:[]}}
+function blank(){return {v:1,pat:{},plan:null,days:[],speaks:0,recent:[],libLevel:'all',saved:{},seen:[],wrong:{},reviews:0,scen:{},learnTab:'patterns',email:{},escn:{},ai:{mode:'casual',style:'casual',level:'beginner',usePat:true,voice:false},chats:[]}}
 function load(){try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&s.v===1)return Object.assign(blank(),s)}catch(e){}return blank()}
-let S=load();
+let S=load();if(!S.voiceV2){S.ai.voice=false;S.voiceV2=1}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
 const z=n=>String(n).padStart(2,'0');
 const dstr=(d=new Date())=>d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate());
@@ -2326,14 +2326,14 @@ const FB_VER=CFG.firebaseVersion||'12.19.0';let fbP=null;
 function fbReady(){if(fbP)return fbP;const base=`https://www.gstatic.com/firebasejs/${FB_VER}/`;
   fbP=(async()=>{const {initializeApp}=await import(base+'firebase-app.js');const A=await import(base+'firebase-ai.js');
     const app=initializeApp(CFG.firebase);
-    if(CFG.recaptchaSiteKey){const {initializeAppCheck,ReCaptchaV3Provider}=await import(base+'firebase-app-check.js');initializeAppCheck(app,{provider:new ReCaptchaV3Provider(CFG.recaptchaSiteKey),isTokenAutoRefreshEnabled:true})}
+    if(CFG.recaptchaSiteKey){const AC=await import(base+'firebase-app-check.js');const P=CFG.recaptchaType==='v3'?AC.ReCaptchaV3Provider:AC.ReCaptchaEnterpriseProvider;AC.initializeAppCheck(app,{provider:new P(CFG.recaptchaSiteKey),isTokenAutoRefreshEnabled:true})}
     return {ai:A.getAI(app,{backend:new A.GoogleAIBackend()}),getGenerativeModel:A.getGenerativeModel}})();
   fbP.catch(()=>{fbP=null});return fbP}
 function jsonFrom(text){const a=text.indexOf('{'),b=text.lastIndexOf('}');try{return JSON.parse(text.slice(a,b+1))}catch(e){return {reply:String(text||'').trim(),reply_th:'',correction:null,natural:null,suggestions:[]}}}
 async function fbJSON(system,messages){
   const {ai,getGenerativeModel}=await fbReady();
   const model=getGenerativeModel(ai,{model:CFG.model||'gemini-flash-latest',systemInstruction:system,generationConfig:{responseMimeType:'application/json',maxOutputTokens:380,temperature:.8}});
-  try{const r=await model.generateContent({contents:messages.map(m=>({role:m.role==='assistant'?'model':'user',parts:[{text:m.content}]}))});return jsonFrom(r.response.text())}
+  try{const r=await Promise.race([model.generateContent({contents:messages.map(m=>({role:m.role==='assistant'?'model':'user',parts:[{text:m.content}]}))}),new Promise((_,j)=>setTimeout(()=>j(new Error('timeout')),30000))]);return jsonFrom(r.response.text())}
   catch(e){const m=String(e&&(e.message||e));if(/429|RESOURCE_EXHAUSTED|quota/i.test(m))throw {code:'rate_limited'};if(/app.?check|403|401|PERMISSION|API key/i.test(m))throw {code:'bad_key'};throw {code:'fb_error',m}}
 }
 const ownJSON=(system,messages,signal)=>hasFB()?fbJSON(system,messages):proxyJSON(system,messages,signal);
@@ -2424,7 +2424,7 @@ function renderChat(){
   const c=C.chat,m=aiMode(c.mode);
   ovEl.innerHTML=`<div class="o-head chat-head"><button class="icon-btn" data-close aria-label="Close chat">${I.back}</button>
     <div class="chat-title"><span class="orb sm" id="chat-orb" style="--c:${AI_HUE[m.id]}">${svgI(m.icon)}</span><div><b>${esc(m.name)} · ${esc(aiLevel(c.level).name)}</b><span>${esc(aiStyle(c.style).name)} style</span></div></div>
-    <button class="icon-btn voice-t" id="voice-t" aria-pressed="${S.ai.voice}" aria-label="Read AI replies aloud">${I.spk}</button></div>
+    <button class="icon-btn voice-t" id="voice-t" aria-pressed="${S.ai.voice}" aria-label="Read every AI reply aloud">${I.spk}</button></div>
     <div class="o-body" id="chat-body"><div class="o-inner chat-inner"><div class="thread" id="msgs"></div></div></div>
     <div class="o-foot chat-foot"><div class="sugs-row" id="sugs"></div>
       <div class="composer"><button class="c-btn mic-btn" id="c-mic" aria-label="Speak your reply">${I.mic}</button>
@@ -2461,7 +2461,7 @@ function renderSugs(){
 }
 function sendMsg(text,fromSug){
   text=(text||'').trim();if(!text||C.busy||aiDead)return;
-  C.chat.msgs.push({r:'me',t:text,fromSug:!!fromSug});C.ideas=false;C.err=null;
+  C.chat.msgs.push({r:'me',t:text,fromSug:!!fromSug,mic:!!C.viaMic});C.viaMic=false;C.ideas=false;C.err=null;
   const ci=$('#ci',ovEl);if(ci){ci.value='';ci.style.height='';$('#c-send',ovEl).disabled=true}
   save();aiTurn();
 }
@@ -2486,14 +2486,15 @@ async function aiTurn(){
     }
     c.msgs.push({r:'ai',t:reply,th:String(r.reply_th||''),sug:Array.isArray(r.suggestions)?r.suggestions.filter(x=>typeof x==='string'&&x.trim()).slice(0,3):[]});
     c.ts=Date.now();markDay();save();
-    if(S.ai.voice){const orb=()=>$('#chat-orb',ovEl);orb()?.classList.add('speaking');say(reply,{onend:()=>orb()?.classList.remove('speaking')})}
+    const spoke=lastMe&&isLastMe&&lastMe.mic;
+    if(S.ai.voice||spoke){const orb=()=>$('#chat-orb',ovEl);orb()?.classList.add('speaking');say(reply,{onend:()=>orb()?.classList.remove('speaking')})}
   }catch(e){
     if(C!==my)return;
     const code=e&&e.code;
     if(code==='cancelled'){}
     else if(['not_granted','sampling_disabled','not_declared','capability_disabled','capability_removed'].includes(code)){aiDead=true;C.err='AI chat is turned off for this page. Allow the page to use Claude to talk with AI.'}
     else if(code==='rate_limited'){C.err='You’re sending messages quickly. Wait a moment, then try again.';C.errRetry=true}
-    else if(code==='bad_key'){C.err='The AI link or app key is wrong. Check Profile → AI connection.';C.errRetry=false}
+    else if(code==='bad_key'){C.err='AI was blocked. Check the keys in Profile → AI connection.';C.errRetry=false}
     else if(code==='session_expired'){C.err='Please sign in to Claude again, then try again.';C.errRetry=true}
     else if(code==='refused'){C.err='The AI couldn’t answer that. Try saying it another way.';C.errRetry=false}
     else{C.err='Couldn’t reach the AI.';C.errRetry=true}
@@ -2508,13 +2509,13 @@ function bindChat(){
   ci.addEventListener('input',()=>{send.disabled=!ci.value.trim();ci.style.height='auto';ci.style.height=Math.min(ci.scrollHeight,132)+'px'});
   ci.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();sendMsg(ci.value)}});
   send.addEventListener('click',()=>sendMsg(ci.value));
-  $('#voice-t',ovEl).addEventListener('click',e=>{S.ai.voice=!S.ai.voice;save();e.currentTarget.setAttribute('aria-pressed',S.ai.voice);if(!S.ai.voice)stopAudio();toast(S.ai.voice?'AI replies will be read aloud':'Voice off')});
+  $('#voice-t',ovEl).addEventListener('click',e=>{S.ai.voice=!S.ai.voice;save();e.currentTarget.setAttribute('aria-pressed',S.ai.voice);if(!S.ai.voice)stopAudio();toast(S.ai.voice?'AI จะอ่านออกเสียงทุกข้อความ':'ปิดเสียง: AI ตอบเป็นข้อความ (ถ้าพูดผ่านไมค์ AI จะตอบเป็นเสียง)')});
   mic.addEventListener('click',()=>{
     if(dictRec){try{dictRec.stop()}catch(e){}return}
     if(srBlocked){toast('Voice input needs microphone access, which this view doesn’t allow. Type instead.');mic.hidden=true;return}
     stopAudio();let r;try{r=new SR()}catch(e){srBlocked=true;mic.hidden=true;return}
     r.lang='en-US';r.interimResults=true;r.continuous=false;const base=ci.value?ci.value.trim()+' ':'';
-    r.onresult=e=>{let t='';for(const res of e.results)t+=res[0].transcript;ci.value=base+t;ci.dispatchEvent(new Event('input'))};
+    r.onresult=e=>{C.viaMic=true;let t='';for(const res of e.results)t+=res[0].transcript;ci.value=base+t;ci.dispatchEvent(new Event('input'))};
     r.onerror=e=>{if(/not-allowed|service-not-allowed|audio-capture/.test(e.error)){srBlocked=true;mic.hidden=true;toast('Voice input needs microphone access, which this view doesn’t allow. Type instead.')}};
     r.onend=()=>{dictRec=null;mic.classList.remove('rec');if(ci.value.trim())send.disabled=false};
     try{r.start();dictRec=r;mic.classList.add('rec')}catch(e){srBlocked=true;mic.hidden=true}
@@ -2559,7 +2560,7 @@ document.addEventListener('click',e=>{
   if((b=t.closest('#ai-save'))){S.aiUrl=$('#ai-url').value.trim();S.aiKeyApp=$('#ai-key').value.trim();aiDead=false;save();toast('Saved');return}
   if((b=t.closest('#ai-test'))){const st=$('#ai-status');S.aiUrl=$('#ai-url').value.trim();S.aiKeyApp=$('#ai-key').value.trim();save();aiDead=false;
     if(sampleFn){st.textContent='✓ Claude AI is on';return}if(!hasOwnAI()){st.textContent='Add a link first';return}st.textContent='Testing…';
-    ownJSON('Reply with JSON {"reply":"OK"} only.',[{role:'user',content:'ping'}]).then(r=>{st.textContent=r&&r.reply?'✓ AI connected':'Unexpected reply'}).catch(e=>{st.textContent='✗ '+(e&&e.code==='bad_key'?'Wrong app key':'Can’t reach the link')});return}
+    ownJSON('Reply with JSON {"reply":"OK"} only.',[{role:'user',content:'ping'}]).then(r=>{st.textContent=r&&r.reply?'✓ AI connected':'Unexpected reply'}).catch(e=>{st.textContent='✗ '+(e&&e.code==='bad_key'?'Blocked: check keys / App Check':e&&e.code==='rate_limited'?'Too many requests, wait 1 min':'Can’t reach AI')});return}
   if((b=t.closest('#bk-copy'))){let code='';try{code=btoa(unescape(encodeURIComponent(JSON.stringify(S))))}catch(e){}copyText(code,b);return}
   if((b=t.closest('#bk-restore'))){try{const o=JSON.parse(decodeURIComponent(escape(atob($('#bk-in').value.trim()))));if(!o||o.v!==1)throw 0;S=Object.assign(blank(),o);save();toast('Progress restored');go('home')}catch(e){toast('Backup code isn’t valid')}return}
   if((b=t.closest('#reset'))){if(b.dataset.armed){S=blank();save();toast('Progress reset');go('home');return}b.dataset.armed='1';b.textContent='Tap again to erase everything';setTimeout(()=>{if(b.isConnected){delete b.dataset.armed;b.textContent='Reset all progress'}},4000)}
