@@ -1499,6 +1499,10 @@ body.kb .blu-page{bottom:auto}
 .blu-comp textarea{font-size:16px!important}
 .blu-foot{padding-bottom:calc(10px + 0px)}
 body.kb .blu-foot{padding-bottom:8px}
+/* typing: hide chips + nav, keep only the input above the keyboard */
+body.kb .blu-foot .sugs-row{display:none!important}
+body.kb .blu-foot{border-top:0;padding-top:6px}
+body.kb .nav{display:none!important}
 </style>
 </head><body>
 <div class="bg-deco" aria-hidden="true"><span class="dots"></span><i class="b1"></i><i class="b2"></i><i class="b3"></i></div>
@@ -1910,7 +1914,7 @@ function go(tab){route={tab,stack:[]};try{history.replaceState(null,'','#'+tab)}
 function push(sub){route.stack.push(sub);render();window.scrollTo(0,0)}
 function back(){route.stack.pop();render();window.scrollTo(0,0)}
 function render(){
-  document.body.classList.remove('chatting','kb');
+  kbOn=false;document.body.classList.remove('chatting','kb');
   if(C&&C.page){if(C.ctl)C.ctl.abort();if(dictRec){try{dictRec.stop()}catch(e){}}C=null}
   const navTab=({learn:'words',practice:'play',saved:'progress',profile:'progress'})[route.tab]||route.tab;$$('.nav button').forEach(b=>b.setAttribute('aria-current',b.dataset.go===navTab?'page':'false'));
   const sub=route.stack[route.stack.length-1];
@@ -2930,15 +2934,16 @@ function bluChat(){
   return c;
 }
 function aiHTML(){return `<div class="blu-page" id="blu"></div>`}
-/* keep the chat locked in place when the phone keyboard opens */
+/* typing mode: only the input box rides above the keyboard; chips and nav stay hidden below */
+let kbOn=false;
 function kbFit(){
-  const p=document.querySelector('.blu-page');const vv=window.visualViewport;
-  if(!p||!vv){document.body.classList.remove('kb');return}
-  const open=window.innerHeight-vv.height>120;
-  document.body.classList.toggle('kb',open);
-  if(open){p.style.top=vv.offsetTop+'px';p.style.height=vv.height+'px';p.style.bottom='auto'}
+  const p=document.querySelector('.blu-page');if(!p)return;const vv=window.visualViewport;
+  const open=kbOn||(vv&&window.innerHeight-vv.height>120);
+  document.body.classList.toggle('kb',!!open);
+  if(open&&vv){p.style.top=vv.offsetTop+'px';p.style.height=vv.height+'px';p.style.bottom='auto'}
+  else if(open){p.style.top='0';p.style.bottom='0';p.style.height=''}
   else{p.style.top='';p.style.height='';p.style.bottom=''}
-  const b=document.getElementById('chat-body');if(b&&open)b.scrollTop=b.scrollHeight;
+  if(open){window.scrollTo(0,0);const b=document.getElementById('chat-body');if(b)b.scrollTop=b.scrollHeight}
 }
 if(window.visualViewport){visualViewport.addEventListener('resize',kbFit);visualViewport.addEventListener('scroll',kbFit)}
 function mountBlu(){S.lastAct={k:'chat'};
@@ -2946,7 +2951,7 @@ function mountBlu(){S.lastAct={k:'chat'};
   if(C&&C.ctl)C.ctl.abort();C={chat,root,page:true,busy:false,ctl:null,ideas:false,open:{},tr:{},err:null,panel:false};
   renderChat();if(!chat.msgs.length)aiTurn();
   document.body.classList.add('chatting');
-  const ci=$('#ci',root);if(ci){ci.addEventListener('focus',()=>{setTimeout(()=>{window.scrollTo(0,0);kbFit()},50);setTimeout(kbFit,350)});ci.addEventListener('blur',()=>setTimeout(kbFit,120))}
+  const ci=$('#ci',root);if(ci){ci.addEventListener('focus',()=>{kbOn=true;kbFit();[60,250,500].forEach(t=>setTimeout(kbFit,t))});ci.addEventListener('blur',()=>{kbOn=false;setTimeout(kbFit,150)})}
 }
 function newBlu(mode){
   const m=aiMode(mode||'blu');
