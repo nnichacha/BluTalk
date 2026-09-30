@@ -1509,6 +1509,7 @@ body.kb .nav{display:none!important}
 .lib-seg{margin-top:-4px}
 .lib-count{margin:-4px 0 0}
 .acts .act:last-child:nth-child(odd) span:last-child{flex:1}
+.blu-page{transition:none!important;will-change:height}
 </style>
 </head><body>
 <div class="bg-deco" aria-hidden="true"><span class="dots"></span><i class="b1"></i><i class="b2"></i><i class="b3"></i></div>
@@ -2946,7 +2947,7 @@ function kbFit(){
   const p=document.querySelector('.blu-page');if(!p)return;const vv=window.visualViewport;
   const open=kbOn||(vv&&window.innerHeight-vv.height>120);
   document.body.classList.toggle('kb',!!open);
-  if(open&&vv){p.style.top=vv.offsetTop+'px';p.style.height=vv.height+'px';p.style.bottom='auto'}
+  if(open&&vv){const kh=window.innerHeight-vv.height;if(kh>120&&Math.abs(kh-(S.kbH||0))>8){S.kbH=Math.round(kh);save()}p.style.top=vv.offsetTop+'px';p.style.height=vv.height+'px';p.style.bottom='auto'}
   else if(open){p.style.top='0';p.style.bottom='0';p.style.height=''}
   else{p.style.top='';p.style.height='';p.style.bottom=''}
   if(open){window.scrollTo(0,0);const b=document.getElementById('chat-body');if(b)b.scrollTop=b.scrollHeight}
@@ -2957,7 +2958,11 @@ function mountBlu(){S.lastAct={k:'chat'};
   if(C&&C.ctl)C.ctl.abort();C={chat,root,page:true,busy:false,ctl:null,ideas:false,open:{},tr:{},err:null,panel:false};
   renderChat();if(!chat.msgs.length)aiTurn();
   document.body.classList.add('chatting');
-  const ci=$('#ci',root);if(ci){ci.addEventListener('focus',()=>{kbOn=true;kbFit();[60,250,500].forEach(t=>setTimeout(kbFit,t))});ci.addEventListener('blur',()=>{kbOn=false;setTimeout(kbFit,150)})}
+  const ci=$('#ci',root);if(ci){
+    /* shrink BEFORE the keyboard appears, so iPhone has no reason to push the page up */
+    const pre=()=>{if(document.activeElement===ci)return;const p=document.querySelector('.blu-page');if(!p)return;const kh=S.kbH||Math.round(window.innerHeight*.45);document.body.classList.add('kb');p.style.top='0';p.style.bottom='auto';p.style.height=(window.innerHeight-kh)+'px';const b=document.getElementById('chat-body');if(b)b.scrollTop=b.scrollHeight;setTimeout(()=>{if(document.activeElement!==ci)kbFit()},800)};
+    if(matchMedia('(pointer:coarse)').matches){ci.addEventListener('touchstart',pre,{passive:true})}
+    ci.addEventListener('focus',()=>{kbOn=true;kbFit();[60,250,500].forEach(t=>setTimeout(kbFit,t))});ci.addEventListener('blur',()=>{kbOn=false;setTimeout(kbFit,150)})}
 }
 function newBlu(mode){
   const m=aiMode(mode||'blu');
