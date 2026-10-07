@@ -1689,6 +1689,7 @@ body.kb .nav{display:none!important}
 .ess-badge{display:inline-flex;align-items:center;gap:4px;height:24px;padding:0 9px;border-radius:99px;background:var(--blu);color:#fff;font-family:inherit;font-size:11px;font-weight:800;letter-spacing:.04em}
 .ess-badge svg{width:12px;height:12px}
 .vg-ess .vcat{background:var(--surface);border-color:transparent}
+.err-detail{display:block;margin-top:4px;font-size:11px;opacity:.65;word-break:break-word}
 </style>
 </head><body>
 <div class="bg-deco" aria-hidden="true"><span class="dots"></span><i class="b1"></i><i class="b2"></i><i class="b3"></i></div>
@@ -3152,17 +3153,33 @@ const hasOwnAI=()=>hasFB()||!!aiUrl();
 /* Firebase AI Logic (Gemini Developer API, no server, key never in the page) */
 const FB_VER=CFG.firebaseVersion||'12.19.0';let fbP=null;
 function fbReady(){if(fbP)return fbP;const base=`https://www.gstatic.com/firebasejs/${FB_VER}/`;
-  fbP=(async()=>{const {initializeApp}=await import(base+'firebase-app.js');const A=await import(base+'firebase-ai.js');
+  fbP=(async()=>{let initializeApp;try{({initializeApp}=await import(base+'firebase-app.js'))}catch(e){throw {code:'fb_error',m:'Cannot load Firebase (network): '+(e&&e.message||e)}}const A=await import(base+'firebase-ai.js');
     const app=initializeApp(CFG.firebase);
     if(CFG.recaptchaSiteKey){const AC=await import(base+'firebase-app-check.js');const P=CFG.recaptchaType==='v3'?AC.ReCaptchaV3Provider:AC.ReCaptchaEnterpriseProvider;AC.initializeAppCheck(app,{provider:new P(CFG.recaptchaSiteKey),isTokenAutoRefreshEnabled:true})}
     return {ai:A.getAI(app,{backend:new A.GoogleAIBackend()}),getGenerativeModel:A.getGenerativeModel}})();
   fbP.catch(()=>{fbP=null});return fbP}
 function jsonFrom(text){const a=text.indexOf('{'),b=text.lastIndexOf('}');try{return JSON.parse(text.slice(a,b+1))}catch(e){return {reply:String(text||'').trim(),reply_th:'',correction:null,natural:null,suggestions:[]}}}
+const FB_MODELS=['gemini-2.5-flash','gemini-2.5-flash-lite','gemini-flash-latest','gemini-2.0-flash'];
 async function fbJSON(system,messages){
   const {ai,getGenerativeModel}=await fbReady();
-  const model=getGenerativeModel(ai,{model:CFG.model||'gemini-flash-latest',systemInstruction:system,generationConfig:{responseMimeType:'application/json',maxOutputTokens:380,temperature:.8}});
-  try{const r=await Promise.race([model.generateContent({contents:messages.map(m=>({role:m.role==='assistant'?'model':'user',parts:[{text:m.content}]}))}),new Promise((_,j)=>setTimeout(()=>j(new Error('timeout')),30000))]);return jsonFrom(r.response.text())}
-  catch(e){const m=String(e&&(e.message||e));if(/429|RESOURCE_EXHAUSTED|quota/i.test(m))throw {code:'rate_limited'};if(/app.?check|403|401|PERMISSION|API key/i.test(m))throw {code:'bad_key'};throw {code:'fb_error',m}}
+  const contents=messages.map(m=>({role:m.role==='assistant'?'model':'user',parts:[{text:m.content}]}));
+  const list=[...new Set([S.fbModel,CFG.model,...FB_MODELS].filter(Boolean))];let last=null;
+  for(const name of list){
+    for(const think of [true,false]){
+      const gc={responseMimeType:'application/json',maxOutputTokens:700,temperature:.8};if(think)gc.thinkingConfig={thinkingBudget:0};
+      try{const model=getGenerativeModel(ai,{model:name,systemInstruction:system,generationConfig:gc});
+        const r=await Promise.race([model.generateContent({contents}),new Promise((_,j)=>setTimeout(()=>j(new Error('timeout')),30000))]);
+        const txt=r.response.text();if(!txt||!txt.trim())throw new Error('empty reply');
+        if(S.fbModel!==name){S.fbModel=name;save()}return jsonFrom(txt)}
+      catch(e){const m=String(e&&(e.message||e));last=m;
+        if(/429|RESOURCE_EXHAUSTED|quota/i.test(m))throw {code:'rate_limited',m};
+        if(/app.?check|PERMISSION_DENIED|API key|api-key|unauthor|SERVICE_DISABLED|has not been used|not enabled/i.test(m))throw {code:'bad_key',m};
+        if(think&&/thinking/i.test(m))continue;
+        if(/not found|404|not supported|unsupported|invalid.*model|empty reply/i.test(m)){if(S.fbModel===name){S.fbModel=null;save()}break}
+        throw {code:'fb_error',m}}
+    }
+  }
+  throw {code:'fb_error',m:last||'no model worked'};
 }
 const ownJSON=(system,messages,signal)=>hasFB()?fbJSON(system,messages):proxyJSON(system,messages,signal);
 const aiAvailable=()=>!!(sampleFn||hasOwnAI());
@@ -3376,7 +3393,7 @@ function renderMsgs(keep){
     ?`<div class="m ai">${av}<div class="m-col"><div class="m-bubble">${esc(x.t)}</div><div class="m-tools">${sayBtn(x.t)}${x.th?`<button class="tr-btn" data-tr="${i}" aria-pressed="${!!C.tr[i]}">${svgI('translate')}<span>แปล</span></button>`:''}</div>${C.tr[i]?`<div class="m-th">${esc(x.th)}</div>`:''}</div></div>`
     :`<div class="m me"><div class="m-bubble">${esc(x.t)}</div>${fixCard(x,i)}</div>`).join('');
   const typing=C.busy?`<div class="m ai">${C.page?av:''}<div class="typing-row">${C.page?'':`<span class="orb sm" style="--c:${aiHue(m)}">${svgI(m.icon)}</span>`}<div class="m-bubble typing" aria-label="Blu is typing"><i></i><i></i><i></i></div></div></div>`:'';
-  const err=C.err?`<div class="chat-err">${esc(C.err)}${C.errRetry?` <button class="link" id="c-retry">Try again</button>`:''}</div>`:'';
+  const err=C.err?`<div class="chat-err">${esc(C.err)}${C.errRetry?` <button class="link" id="c-retry">Try again</button>`:''}${C.errDetail?`<small class="err-detail">${esc(C.errDetail)}</small>`:''}</div>`:'';
   el.innerHTML=intro+msgs+typing+err;
   $('#c-retry',CR())?.addEventListener('click',()=>{C.err=null;aiTurn()});
   renderSugs();
@@ -3403,7 +3420,7 @@ function sendMsg(text,fromSug){
 async function aiTurn(){
   const c=C.chat;const my=C;
   const turns=aiTurns(c);if(!turns)return;
-  C.busy=true;C.err=null;renderMsgs();
+  C.busy=true;C.err=null;C.errDetail='';renderMsgs();
   const fn=await sampleReady;
   if(!c.msgs.length&&c.mode==='blu'){const o=pick(BLU_OPEN);c.msgs.push({r:'ai',t:o.reply,th:o.reply_th,sug:o.suggestions.map(x=>({t:x.text,f:x.feel}))});c.ts=Date.now();save();C.busy=false;renderMsgs();return}
   if(!fn&&!hasOwnAI()){C.busy=false;C.err='AI chat isn’t available right now. Please try again in a moment.';C.errRetry=true;renderMsgs();return}
@@ -3426,11 +3443,11 @@ async function aiTurn(){
     if(S.autoVoice||spoke){const orb=()=>$('#chat-orb',CR());orb()?.classList.add('speaking');say(reply,{onend:()=>orb()?.classList.remove('speaking')})}
   }catch(e){
     if(C!==my)return;
-    const code=e&&e.code;
+    const code=e&&e.code;C.errDetail=String((e&&(e.m||e.message||e.code))||'').slice(0,160);
     if(code==='cancelled'){}
     else if(['not_granted','sampling_disabled','not_declared','capability_disabled','capability_removed'].includes(code)){aiDead=true;C.err='AI chat is turned off for this page. Allow the page to use Claude to talk with AI.'}
     else if(code==='rate_limited'){C.err='You’re sending messages quickly. Wait a moment, then try again.';C.errRetry=true}
-    else if(code==='bad_key'){C.err='AI was blocked. Check the keys in Profile → AI connection.';C.errRetry=false}
+    else if(code==='bad_key'){C.err='AI was blocked. Check Firebase AI Logic / App Check settings.';C.errRetry=true}
     else if(code==='session_expired'){C.err='Please sign in to Claude again, then try again.';C.errRetry=true}
     else if(code==='refused'){C.err='The AI couldn’t answer that. Try saying it another way.';C.errRetry=false}
     else{C.err='Couldn’t reach the AI.';C.errRetry=true}
@@ -3513,7 +3530,7 @@ document.addEventListener('click',e=>{
   if((b=t.closest('#ai-save'))){S.aiUrl=$('#ai-url').value.trim();S.aiKeyApp=$('#ai-key').value.trim();aiDead=false;save();toast('Saved');return}
   if((b=t.closest('#ai-test'))){const st=$('#ai-status');S.aiUrl=$('#ai-url').value.trim();S.aiKeyApp=$('#ai-key').value.trim();save();aiDead=false;
     if(sampleFn){st.textContent='✓ Claude AI is on';return}if(!hasOwnAI()){st.textContent='Add a link first';return}st.textContent='Testing…';
-    ownJSON('Reply with JSON {"reply":"OK"} only.',[{role:'user',content:'ping'}]).then(r=>{st.textContent=r&&r.reply?'✓ AI connected':'Unexpected reply'}).catch(e=>{st.textContent='✗ '+(e&&e.code==='bad_key'?'Blocked: check keys / App Check':e&&e.code==='rate_limited'?'Too many requests, wait 1 min':'Can’t reach AI')});return}
+    ownJSON('Reply with JSON {"reply":"OK"} only.',[{role:'user',content:'ping'}]).then(r=>{st.textContent=r&&r.reply?'✓ AI connected':'Unexpected reply'}).catch(e=>{st.textContent='✗ '+(e&&e.code==='bad_key'?'Blocked: check keys / App Check':e&&e.code==='rate_limited'?'Too many requests, wait 1 min':'Can’t reach AI')+(e&&(e.m||e.message)?' — '+String(e.m||e.message).slice(0,140):'')});return}
   if((b=t.closest('#bk-copy'))){let code='';try{code=btoa(unescape(encodeURIComponent(JSON.stringify(S))))}catch(e){}copyText(code,b);return}
   if((b=t.closest('#bk-restore'))){try{const o=JSON.parse(decodeURIComponent(escape(atob($('#bk-in').value.trim()))));if(!o||o.v!==1)throw 0;S=Object.assign(blank(),o);save();toast('Progress restored');go('home')}catch(e){toast('Backup code isn’t valid')}return}
   if((b=t.closest('#reset'))){if(b.dataset.armed){S=blank();save();toast('Progress reset');go('home');return}b.dataset.armed='1';b.textContent='Tap again to erase everything';setTimeout(()=>{if(b.isConnected){delete b.dataset.armed;b.textContent='Reset all progress'}},4000)}
