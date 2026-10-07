@@ -3173,7 +3173,8 @@ async function fbJSON(system,messages){
         if(S.fbModel!==name){S.fbModel=name;save()}return jsonFrom(txt)}
       catch(e){const m=String(e&&(e.message||e));last=m;
         if(/429|RESOURCE_EXHAUSTED|quota/i.test(m))throw {code:'rate_limited',m};
-        if(/app.?check|PERMISSION_DENIED|API key|api-key|unauthor|SERVICE_DISABLED|has not been used|not enabled/i.test(m))throw {code:'bad_key',m};
+        if(/firebasevertexai|generativelanguage|SERVICE_DISABLED|has not been used|to be enabled|not enabled/i.test(m))throw {code:'api_off',m};
+        if(/app.?check|PERMISSION_DENIED|API key|api-key|unauthor/i.test(m))throw {code:'bad_key',m};
         if(think&&/thinking/i.test(m))continue;
         if(/not found|404|not supported|unsupported|invalid.*model|empty reply/i.test(m)){if(S.fbModel===name){S.fbModel=null;save()}break}
         throw {code:'fb_error',m}}
@@ -3447,6 +3448,7 @@ async function aiTurn(){
     if(code==='cancelled'){}
     else if(['not_granted','sampling_disabled','not_declared','capability_disabled','capability_removed'].includes(code)){aiDead=true;C.err='AI chat is turned off for this page. Allow the page to use Claude to talk with AI.'}
     else if(code==='rate_limited'){C.err='You’re sending messages quickly. Wait a moment, then try again.';C.errRetry=true}
+    else if(code==='api_off'){C.err='ยังไม่ได้เปิด Firebase AI Logic ในโปรเจกต์ ไปที่ Firebase console → AI Logic → Get started → เลือก Gemini Developer API แล้วรอ 2–3 นาที';C.errRetry=true}
     else if(code==='bad_key'){C.err='AI was blocked. Check Firebase AI Logic / App Check settings.';C.errRetry=true}
     else if(code==='session_expired'){C.err='Please sign in to Claude again, then try again.';C.errRetry=true}
     else if(code==='refused'){C.err='The AI couldn’t answer that. Try saying it another way.';C.errRetry=false}
