@@ -3256,7 +3256,7 @@ function mountBlu(){S.lastAct={k:'chat'};
   const ci=$('#ci',root);if(ci){
     /* shrink BEFORE the keyboard appears, so iPhone has no reason to push the page up */
     const pre=()=>{if(document.activeElement===ci)return;const p=document.querySelector('.blu-page');if(!p)return;const kh=S.kbH||Math.round(window.innerHeight*.45);document.body.classList.add('kb');p.style.top='0';p.style.bottom='auto';p.style.height=(window.innerHeight-kh)+'px';const b=document.getElementById('chat-body');if(b)b.scrollTop=b.scrollHeight;setTimeout(()=>{if(document.activeElement!==ci)kbFit()},800)};
-    if(matchMedia('(pointer:coarse)').matches){ci.addEventListener('touchstart',pre,{passive:true})}
+    if(matchMedia('(pointer:coarse)').matches){let tx=0,ty=0;ci.addEventListener('touchstart',e=>{const t=e.touches[0];tx=t.clientX;ty=t.clientY},{passive:true});ci.addEventListener('touchend',e=>{if(document.activeElement===ci)return;const t=e.changedTouches[0];if(Math.abs(t.clientX-tx)>10||Math.abs(t.clientY-ty)>10)return;e.preventDefault();try{ci.focus({preventScroll:true})}catch(_){ci.focus()}pre()},{passive:false})}
     ci.addEventListener('focus',()=>{kbOn=true;kbFit();[60,250,500].forEach(t=>setTimeout(kbFit,t))});ci.addEventListener('blur',()=>{kbOn=false;setTimeout(kbFit,150)})}
 }
 function newBlu(mode){
