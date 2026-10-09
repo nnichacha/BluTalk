@@ -3149,7 +3149,8 @@ try{if(!CFG.recaptchaSiteKey&&typeof recaptchaSiteKey==='string')CFG.recaptchaSi
 const aiUrl=()=>String(S.aiUrl||CFG.aiEndpoint||'').trim();
 const aiKey=()=>String(S.aiKeyApp||CFG.appKey||'').trim();
 const hasFB=()=>!!(CFG.firebase&&CFG.firebase.apiKey);
-const hasOwnAI=()=>hasFB()||!!aiUrl();
+const hasGK=()=>!!(CFG.geminiKey&&String(CFG.geminiKey).trim());
+const hasOwnAI=()=>hasGK()||hasFB()||!!aiUrl();
 /* Firebase AI Logic (Gemini Developer API, no server, key never in the page) */
 const FB_VER=CFG.firebaseVersion||'12.19.0';let fbP=null;
 function fbReady(){if(fbP)return fbP;const base=`https://www.gstatic.com/firebasejs/${FB_VER}/`;
@@ -3173,8 +3174,9 @@ async function fbJSON(system,messages){
         if(S.fbModel!==name){S.fbModel=name;save()}return jsonFrom(txt)}
       catch(e){const m=String(e&&(e.message||e));last=m;
         if(/429|RESOURCE_EXHAUSTED|quota/i.test(m))throw {code:'rate_limited',m};
-        if(/firebasevertexai|generativelanguage|SERVICE_DISABLED|has not been used|to be enabled|not enabled/i.test(m))throw {code:'api_off',m};
-        if(/app.?check|PERMISSION_DENIED|API key|api-key|unauthor/i.test(m))throw {code:'bad_key',m};
+        if(/app.?check/i.test(m))throw {code:'appcheck',m};
+        if(/SERVICE_DISABLED|has not been used|to be enabled|not enabled/i.test(m))throw {code:'api_off',m};
+        if(/PERMISSION_DENIED|API key|api-key|unauthor|\b40[13]\b/i.test(m))throw {code:'bad_key',m};
         if(think&&/thinking/i.test(m))continue;
         if(/not found|404|not supported|unsupported|invalid.*model|empty reply/i.test(m)){if(S.fbModel===name){S.fbModel=null;save()}break}
         throw {code:'fb_error',m}}
@@ -3182,7 +3184,28 @@ async function fbJSON(system,messages){
   }
   throw {code:'fb_error',m:last||'no model worked'};
 }
-const ownJSON=(system,messages,signal)=>hasFB()?fbJSON(system,messages):proxyJSON(system,messages,signal);
+async function gkJSON(system,messages,signal){
+  const contents=messages.map(m=>({role:m.role==='assistant'?'model':'user',parts:[{text:m.content}]}));
+  const list=[...new Set([S.fbModel,CFG.model,...FB_MODELS].filter(Boolean))];let last='';
+  for(const name of list){for(const think of [true,false]){
+    const gc={responseMimeType:'application/json',maxOutputTokens:700,temperature:.8};if(think)gc.thinkingConfig={thinkingBudget:0};
+    let res,j;
+    const K=String(CFG.geminiKey).trim(),U=`https://generativelanguage.googleapis.com/v1beta/models/${name}:generateContent`,B=JSON.stringify({systemInstruction:{parts:[{text:system}]},contents,generationConfig:gc});
+    try{res=await fetch(S.gkQ?U+'?key='+encodeURIComponent(K):U,{method:'POST',signal,headers:S.gkQ?{'Content-Type':'application/json'}:{'Content-Type':'application/json','x-goog-api-key':K},body:B});j=await res.json().catch(()=>({}));
+      if(!S.gkQ&&(res.status===400||res.status===401||res.status===403)&&/key/i.test(JSON.stringify(j))){const r2=await fetch(U+'?key='+encodeURIComponent(K),{method:'POST',signal,headers:{'Content-Type':'application/json'},body:B});const j2=await r2.json().catch(()=>({}));if(r2.ok){S.gkQ=1;save()}res=r2;j=j2}}
+    catch(e){if(e&&e.name==='AbortError')throw {code:'cancelled'};throw {code:'fb_error',m:'Network: '+(e&&e.message||e)}}
+    const m=(j.error&&(j.error.status+' '+j.error.message))||('HTTP '+res.status);
+    if(res.ok){const txt=((j.candidates||[])[0]?.content?.parts||[]).map(p=>p.text||'').join('');if(txt.trim()){if(S.fbModel!==name){S.fbModel=name;save()}return jsonFrom(txt)}last='empty reply';break}
+    last=m;
+    if(res.status===429)throw {code:'rate_limited',m};
+    if(/referer|referrer|API_KEY_INVALID|API key not valid|PERMISSION_DENIED/i.test(m)||res.status===403)throw {code:'bad_key',m};
+    if(think&&/thinking/i.test(m))continue;
+    if(res.status===404||/not found|not supported/i.test(m))break;
+    throw {code:'fb_error',m};
+  }}
+  throw {code:'fb_error',m:last||'no model worked'};
+}
+const ownJSON=(system,messages,signal)=>hasGK()?gkJSON(system,messages,signal):hasFB()?fbJSON(system,messages):proxyJSON(system,messages,signal);
 const aiAvailable=()=>!!(sampleFn||hasOwnAI());
 async function proxyJSON(system,messages,signal){
   const res=await fetch(aiUrl(),{method:'POST',headers:{'Content-Type':'application/json','X-App-Key':aiKey()},body:JSON.stringify({system,messages}),signal});
@@ -3448,6 +3471,7 @@ async function aiTurn(){
     if(code==='cancelled'){}
     else if(['not_granted','sampling_disabled','not_declared','capability_disabled','capability_removed'].includes(code)){aiDead=true;C.err='AI chat is turned off for this page. Allow the page to use Claude to talk with AI.'}
     else if(code==='rate_limited'){C.err='You’re sending messages quickly. Wait a moment, then try again.';C.errRetry=true}
+    else if(code==='appcheck'){C.err=CFG.recaptchaSiteKey?'App Check ยังไม่ผ่าน: เช็กว่า Key ID ถูก และโดเมน github.io ของคุณอยู่ในรายชื่อโดเมนของคีย์ reCAPTCHA':'Firebase App Check บล็อกอยู่: ใส่ Key ID ของ reCAPTCHA ใน config.js หรือปิด Enforce ของ AI Logic ชั่วคราว';C.errRetry=true}
     else if(code==='api_off'){C.err='ยังไม่ได้เปิด Firebase AI Logic ในโปรเจกต์ ไปที่ Firebase console → AI Logic → Get started → เลือก Gemini Developer API แล้วรอ 2–3 นาที';C.errRetry=true}
     else if(code==='bad_key'){C.err='AI was blocked. Check Firebase AI Logic / App Check settings.';C.errRetry=true}
     else if(code==='session_expired'){C.err='Please sign in to Claude again, then try again.';C.errRetry=true}
