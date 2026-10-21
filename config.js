@@ -1,5 +1,5 @@
 /* BluTalk settings */
 window.BLUTALK_CONFIG = {
-  geminiKey: "AQ.Ab8RN6K0Bi1soZX_HNmSnUywwe0dR35X7hzlF3lbYtbfUL-t8A",
+  geminiKey: "AIzaSyAnqbOfvGlubcDe4xugpiVtSwWq6obm96o",
   model: "gemini-flash-latest"
 };
