@@ -3424,7 +3424,7 @@ function fbReady(){if(fbP)return fbP;const base=`https://www.gstatic.com/firebas
     return {ai:A.getAI(app,{backend:new A.GoogleAIBackend()}),getGenerativeModel:A.getGenerativeModel}})();
   fbP.catch(()=>{fbP=null});return fbP}
 function jsonFrom(text){const a=text.indexOf('{'),b=text.lastIndexOf('}');try{return JSON.parse(text.slice(a,b+1))}catch(e){return {reply:String(text||'').trim(),reply_th:'',correction:null,natural:null,suggestions:[]}}}
-const FB_MODELS=['gemini-flash-latest','gemini-3.7-flash','gemini-3.6-flash','gemini-3.5-flash','gemini-3-flash','gemini-flash-lite-latest','gemini-2.5-flash','gemini-2.5-flash-lite'];
+const FB_MODELS=['gemini-3.6-flash','gemini-flash-latest','gemini-3.7-flash','gemini-3.6-flash','gemini-3.5-flash','gemini-3-flash','gemini-flash-lite-latest','gemini-2.5-flash','gemini-2.5-flash-lite'];
 async function fbJSON(system,messages){
   const {ai,getGenerativeModel}=await fbReady();
   const contents=messages.map(m=>({role:m.role==='assistant'?'model':'user',parts:[{text:m.content}]}));
@@ -3442,7 +3442,7 @@ async function fbJSON(system,messages){
         if(/SERVICE_DISABLED|has not been used|to be enabled|not enabled/i.test(m))throw {code:'api_off',m};
         if(/PERMISSION_DENIED|API key|api-key|unauthor|\b40[13]\b/i.test(m))throw {code:'bad_key',m};
         if(think&&/thinking/i.test(m))continue;
-        if(/not found|404|not supported|unsupported|invalid.*model|empty reply/i.test(m)){if(S.fbModel===name){S.fbModel=null;save()}break}
+        if(/not found|404|not supported|unsupported|invalid.*model|empty reply|no longer available|high demand|overloaded|UNAVAILABLE|\b50[0-4]\b|timeout/i.test(m)){if(S.fbModel===name){S.fbModel=null;save()}break}
         throw {code:'fb_error',m}}
     }
   }
