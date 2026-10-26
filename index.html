@@ -7,7 +7,7 @@
 <title>BluTalk</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Figtree:wght@400;500;600;700;800&family=Noto+Sans+Thai+Looped:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&family=Noto+Sans+Thai:wght@400;500;600;700&display=swap">
 <style>
 /* =====================================================================
    PatternSpeak design system v6
@@ -1818,6 +1818,55 @@ body.feedmode{overflow:hidden}
 .fc-opt{padding:16px;border-radius:18px;background:color-mix(in srgb,currentColor 9%,transparent);color:inherit;text-align:left;font-size:17px;font-weight:700;border:2px solid transparent}
 .fc-opt.right{border-color:#7FB27F;background:rgba(127,178,127,.18)}.fc-opt.wrong{border-color:#C97A6B}.fc-opt.dim:not(.right){opacity:.5}
 .fc .spin-th{color:inherit!important}.fc .icon-btn.say{color:inherit}
+
+/* ===== v24 modern type + explore home ===== */
+:root{--font:"Figtree","Noto Sans Thai",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;--serif:var(--font)}
+body{font-size:14.5px}
+.t-hero,.t-page,.brand,.potd-en,.world-t b,.best-en,.cat-hero .t-page,.step-intro h2,.hero2-h,.watch-t,.poster-t,.spin-frame,.fc-word,.dw-en,.wotd-en,.ep-title-card b,.ep-cliff,.f-hello,.result-big,.hero-frame,.pattern-big{font-family:var(--font)!important;font-weight:800!important;letter-spacing:-.02em!important}
+.t-page,.f-head .t-page,.vc-hero .t-page,.tp-head .t-page{font-size:22px!important;line-height:1.2!important}
+.t-hero{font-size:24px!important}.t-sec{font-size:16px!important}
+.brand{font-size:17px!important}
+.spin-frame{font-size:21px!important;line-height:1.35!important}.pr-card .spin-frame{font-size:22px!important}
+.fc .spin-frame{font-size:24px!important}.fc-word{font-size:30px!important}
+.dw-en{font-size:28px!important}.wotd-en{font-size:22px!important}
+.hero2-h{font-size:20px!important}.watch-t{font-size:20px!important}.poster-t{font-size:19px!important}
+.ep-title-card b{font-size:21px!important}.ep-cliff{font-size:17px!important}
+.spin-slot{border-radius:8px!important;padding:0 .3em!important}
+/* explore */
+.xp{gap:14px}
+.xp-top{display:flex;align-items:center;justify-content:space-between;padding-top:4px}
+.xp-hi{display:flex;flex-direction:column;line-height:1.2}.xp-hi small{font-size:12px;color:var(--muted);font-weight:600}.xp-hi b{font-size:20px;font-weight:800;letter-spacing:-.02em;color:var(--ink)}
+.xp-chip{display:inline-flex;align-items:center;gap:4px;height:34px;padding:0 12px;border-radius:99px;background:var(--rose-soft);color:var(--rose);font-weight:800;font-size:13px}.xp-chip svg{width:15px;height:15px}
+.xp-seg{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:4px;border-radius:16px;background:var(--surface-2)}
+.xp-seg button{display:flex;align-items:center;justify-content:center;gap:6px;height:40px;border-radius:12px;font-weight:700;font-size:13.5px;color:var(--muted)}
+.xp-seg button svg{width:16px;height:16px}.xp-seg button small{font-size:11px;font-weight:600;opacity:.7}
+.xp-seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 2px 8px -4px rgba(27,28,36,.25)}
+.xp-cats{display:flex;gap:12px;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:2px 16px 4px}.xp-cats::-webkit-scrollbar{display:none}
+.xp-cat{flex:none;width:58px;display:flex;flex-direction:column;align-items:center;gap:5px}
+.xp-cat-ic{width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--surface);color:var(--ink);box-shadow:inset 0 0 0 2px var(--line)}
+.xp-cat-ic svg{width:21px;height:21px}
+.xp-cat small{font-size:10.5px;font-weight:600;color:var(--muted);text-align:center;line-height:1.2;max-width:62px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.xp-cat.on .xp-cat-ic{background:var(--cta-bg);color:#F4F1EC;box-shadow:0 0 0 2px var(--bg),0 0 0 4px #D2AE8A}.xp-cat.on small{color:var(--ink)}
+.xp-today{display:flex;align-items:center;gap:5px;margin:-4px 0 0;font-size:12px;font-weight:700;color:var(--blu)}.xp-today svg{width:14px;height:14px}
+.xp-grid{columns:2;column-gap:10px}
+.xc,.xw{break-inside:avoid;display:flex;flex-direction:column;gap:7px;width:100%;margin:0 0 10px;padding:13px 13px 11px;border-radius:18px;text-align:left;transition:transform .15s}
+.xc:active,.xw:active{transform:scale(.97)}
+.x-bl{background:var(--blu-soft);color:var(--ink)}.x-br{background:var(--rose-soft);color:var(--ink)}.x-gy{background:var(--sun-soft);color:var(--ink)}.x-wh{background:var(--surface);color:var(--ink);box-shadow:inset 0 0 0 1px var(--line)}.x-dk{background:#1D2033;color:#F4F1EC}
+.xc-tag{display:flex;align-items:center;gap:4px;font-size:10.5px;font-weight:700;opacity:.65;text-transform:uppercase;letter-spacing:.04em}.xc-tag svg{width:12px;height:12px;flex:none}
+.xc-new{margin-left:auto;font-style:normal;font-size:9px;font-weight:800;padding:2px 6px;border-radius:99px;background:#D2AE8A;color:#22180F;opacity:1;letter-spacing:.06em}
+.xc-frame{font-size:15px;font-weight:700;line-height:1.4;letter-spacing:-.01em}
+.xc-frame em{font-style:normal;padding:1px 6px;margin:0 2px;border-radius:7px;background:#34496B;color:#fff}
+.x-br .xc-frame em{background:#7A5638}.x-dk .xc-frame em{background:#D2AE8A;color:#22180F}.x-gy .xc-frame em{background:#4A4F66}
+.xc-th{font-size:12px;line-height:1.45;opacity:.7}
+.xc-foot{display:flex;justify-content:space-between;font-size:10.5px;font-weight:700;opacity:.5;margin-top:2px}
+.xw{cursor:pointer}
+.xw-top{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap}.xw-top b{font-size:17px;font-weight:800;letter-spacing:-.02em}.xw-top small{font-size:10.5px;font-weight:700;opacity:.55}
+.xw-th{display:flex;flex-direction:column;gap:4px;filter:blur(6px);opacity:.5;transition:filter .25s,opacity .25s;user-select:none}
+.xw-th span{font-size:13px;font-weight:600}.xw-th i{font-size:12px;opacity:.75}
+.xw.on .xw-th{filter:none;opacity:1}
+.xw-foot{display:flex;align-items:center;gap:2px}.xw-hint{flex:1;font-size:10.5px;font-weight:600;opacity:.5}.xw.on .xw-hint{visibility:hidden}
+.xw .icon-btn.xs{width:30px;height:30px;color:inherit}.xw .icon-btn.xs svg{width:16px;height:16px}
+.xp-more{height:40px}
 </style>
 </head><body>
 <div class="bg-deco" aria-hidden="true"><span class="dots"></span><i class="b1"></i><i class="b2"></i><i class="b3"></i></div>
@@ -2239,13 +2288,14 @@ function render(){
   const navTab=({learn:'words',practice:'play',saved:'progress',profile:'progress',today:'progress'})[route.tab]||route.tab;$$('.nav button').forEach(b=>b.setAttribute('aria-current',b.dataset.go===navTab?'page':'false'));
   const sub=route.stack[route.stack.length-1];
   if(sub){app.innerHTML=({group:groupHTML,sit:sitHTML,hc:hcHTML,search:searchHTML,email:emailHTML,ecat:ecatHTML,eguide:eguideHTML,stories:storiesHTML,vcat:vcatHTML,topics:topicsHTML,topic:topicHTML,world:worldHTML,pcat:pcatHTML,lib:libHTML,native:nativeHTML,tq:tqHTML,season:seasonHTML,dict:dictHTML})[sub.type](sub.id);if(sub.type==='search')bindSearch();if(sub.type==='dict')bindDict(sub.id);return}
-  app.innerHTML=({home:feedHTML,today:homeHTML,words:wordsHTML,learn:learnHTML,ai:aiHTML,play:playHTML,progress:progressHTML,practice:practiceHTML,saved:savedHTML,profile:profileHTML})[route.tab]();
+  app.innerHTML=({home:exploreHTML,feed:feedHTML,today:homeHTML,words:wordsHTML,learn:learnHTML,ai:aiHTML,play:playHTML,progress:progressHTML,practice:practiceHTML,saved:savedHTML,profile:profileHTML})[route.tab]();
   afterRender();
 }
 function rerender(){render();const v=app.firstElementChild;if(v)v.style.animation='none'}
 function afterRender(){
   if(route.tab==='ai'&&!route.stack.length)mountBlu();
-  if(route.tab==='home'&&!route.stack.length)mountFeed();
+  if(route.tab==='home'&&!route.stack.length)mountExplore();
+  if(route.tab==='feed'&&!route.stack.length)mountFeed();
   requestAnimationFrame(()=>requestAnimationFrame(()=>$$('.ring .fill',app).forEach(c=>c.style.strokeDashoffset=c.dataset.to)));
   if(route.tab==='home'&&!route.stack.length&&!nextItem()&&S.celebrated!==dstr()){S.celebrated=dstr();save();setTimeout(()=>celebrate($('#hero .ic-tile'),26),350)}
 }
@@ -2419,6 +2469,29 @@ function mountFeed(){const f=$('#feed');if(!f)return;document.body.classList.add
   }),{root:f,threshold:[.6]});
   $$('.fc',f).forEach(c=>io.observe(c));
 }
+
+/* ================= Home: Explore patterns & words (compact, browsable) ================= */
+let XP=null;
+const EXP_TINT=['bl','br','gy','wh','bl','dk','br','wh','gy'];
+function expPool(){const seg=S.homeSeg==='words'?'words':'pat';const cat=XP.cat;
+  if(seg==='pat'){let L=CURRICULUM.slice();if(cat)L=L.filter(p=>p.category===cat);const r=rng(dayIndex()*31+(cat?cat.length:7));return L.map(p=>[r(),p]).sort((a,b)=>a[0]-b[0]).map(x=>x[1])}
+  let W;if(cat){const c=VC[cat];W=c.ids.map(i=>{const e=ENTRIES[i];return [e.en,'',e.th,e.ex||'']})}else{const ess=D.vgroups[0].ids.flatMap(id=>VC[id].ids).map(i=>{const e=ENTRIES[i];return [e.en,'',e.th,e.ex||'']});const r=rng(dayIndex()*17);W=ess.concat(DICT).map(w=>[r(),w]).sort((a,b)=>a[0]-b[0]).map(x=>x[1])}
+  const seen=new Set();return W.filter(w=>!seen.has(w[0].toLowerCase())&&seen.add(w[0].toLowerCase()))}
+function expPatCard(p,i){const m=PCAT[p.category]||['','layers'];const o=spinOpts(p);const c=o.length?o[(dayIndex()+i)%o.length]:{w:p.slot,th:p.meaning};const [a,b]=p.frame.split('{}');const seen=(S.prSeen||[]).includes(p.id);
+  return `<button class="xc x-${EXP_TINT[i%EXP_TINT.length]}" data-pr="${p.id}" data-prl="${XP.cat?'cat:'+esc(p.category):'all'}"><span class="xc-tag">${svgI(m[1],2)}${esc(p.category)}${seen?'':'<i class="xc-new">NEW</i>'}</span><span class="xc-frame">${esc(a)}<em>${esc(c.w)}</em>${esc(b)}</span><span class="xc-th">${esc(c.th)}</span><span class="xc-foot"><span>${o.length} ประโยค</span><span>L${p.level}</span></span></button>`}
+function expWordCard(w,i){const sv=!!S.saved[w[0]];return `<div class="xw x-${EXP_TINT[(i+3)%EXP_TINT.length]}" data-xw><div class="xw-top"><b>${esc(w[0])}</b>${w[1]?`<small>${esc(w[1])}</small>`:''}</div><div class="xw-th"><span>${esc(w[2])}</span>${w[3]?`<i>${esc(w[3])}</i>`:''}</div><div class="xw-foot"><span class="xw-hint">แตะดูคำแปล</span>${sayBtn(w[0],'xs')}${heartBtn(w[0],'xs')}</div></div>`}
+function expMore(n){const seg=S.homeSeg==='words'?'words':'pat';const part=XP.pool.slice(XP.n,XP.n+n);const html=part.map((x,k)=>seg==='pat'?expPatCard(x,XP.n+k):expWordCard(x,XP.n+k)).join('');XP.n+=part.length;return html}
+function exploreHTML(){const seg=S.homeSeg==='words'?'words':'pat';XP={cat:S.homeCat&&S.homeCat[seg]||null,n:0};XP.pool=expPool();
+  const st=streak();const d=tdk();const today=(d.pr||[]).length+(d.xw||0);
+  const cats=seg==='pat'?D.categories.map(c=>({id:c,name:c,icon:(PCAT[c]||['','layers'])[1]})):D.vgroups.flatMap(g=>g.ids).slice(0,40).map(id=>({id,name:VC[id].name,icon:VC[id].icon}));
+  const [hi]=greet();
+  return `<div class="view xp">
+  <header class="xp-top"><div class="brand"><img class="brand-logo" src="${LOGO}" alt="" width="28" height="28">BluTalk</div><div class="top-actions"><button class="xp-chip" data-go="progress">${svgI('flame',2)}${st}</button>${sndBtn()}</div></header>
+  <div class="xp-seg" role="tablist"><button data-hseg="pat" aria-pressed="${seg==='pat'}">${svgI('layers',2)}แพทเทิร์น <small>${P.length}</small></button><button data-hseg="words" aria-pressed="${seg==='words'}">${svgI('book',2)}คำศัพท์ <small>${(DICT.length+WORD_IDS.length).toLocaleString()}</small></button></div>
+  <div class="xp-cats"><button class="xp-cat ${XP.cat?'':'on'}" data-hcat=""><span class="xp-cat-ic">${svgI('sparkle',2)}</span><small>สุ่มให้</small></button>${cats.map(c=>`<button class="xp-cat ${XP.cat===c.id?'on':''}" data-hcat="${esc(c.id)}"><span class="xp-cat-ic">${svgI(c.icon,2)}</span><small>${esc(c.name.replace(/ & .*/,''))}</small></button>`).join('')}</div>
+  ${today?`<p class="xp-today">${svgI('check',2.4)} วันนี้ดูไปแล้ว ${today} อย่าง</p>`:''}
+  <div class="xp-grid ${seg}" id="xgrid">${expMore(20)}</div><div id="xmore" class="xp-more"></div></div>`}
+function mountExplore(){const s=$('#xmore');if(!s)return;const io=new IntersectionObserver(es=>{if(es[0].isIntersecting&&XP.n<XP.pool.length){$('#xgrid').insertAdjacentHTML('beforeend',expMore(16))}},{rootMargin:'400px'});io.observe(s)}
 
 /* ================= Fun-first shell: Home · Chat · Play · Progress ================= */
 const ACTS=[
@@ -3821,6 +3894,9 @@ document.addEventListener('click',e=>{
   if((b=t.closest('[data-close]'))){closeOverlay();return}
   if((b=t.closest('[data-start]'))){const nx=nextItem();const id=nx?nx.id:(nextExtra()||pick(CURRICULUM)).id;openLesson(id);return}
   if((b=t.closest('[data-ep]'))){openEp(b.dataset.ep);return}
+  if((b=t.closest('[data-hseg]'))){S.homeSeg=b.dataset.hseg;save();rerender();window.scrollTo(0,0);return}
+  if((b=t.closest('[data-hcat]'))){const seg=S.homeSeg==='words'?'words':'pat';S.homeCat=S.homeCat||{};S.homeCat[seg]=b.dataset.hcat||null;save();const y=window.scrollY;rerender();window.scrollTo(0,y);return}
+  if((b=t.closest('[data-xw]'))&&!t.closest('.icon-btn')){if(!b.classList.contains('on')){b.classList.add('on');const w=$('.xw-top b',b).textContent;markSeen(w);const d=tdk();d.xw=(d.xw||0)+1;if(d.xw===3)markDay();save();autoSay(w)}else b.classList.remove('on');return}
   if((b=t.closest('[data-freveal]'))){b.classList.add('on');const w=b.closest('.fc-in').querySelector('.fc-word');if(w)autoSay(w.textContent);return}
   if((b=t.closest('[data-fq]'))){const box=b.closest('.fc-opts');if(box.classList.contains('done'))return;box.classList.add('done');$$('[data-fq]',box).forEach(x=>x.classList.add(x.dataset.fq==='1'?'right':'dim'));if(b.dataset.fq!=='1')b.classList.add('wrong');else{S.xp=(S.xp||0)+3;save();celebrate(b,10)}say($('[data-fq="1"]',box).dataset.sayAfter);return}
   if((b=t.closest('[data-push-rep]'))){const [type,id]=b.dataset.pushRep.split(':');route.stack[route.stack.length-1]={type,id};render();return}
